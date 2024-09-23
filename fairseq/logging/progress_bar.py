@@ -115,6 +115,7 @@ def build_progress_bar(
 
 
 def format_stat(stat):
+    import numpy as np
     if isinstance(stat, Number):
         stat = "{:g}".format(stat)
     elif isinstance(stat, AverageMeter):
@@ -125,8 +126,9 @@ def format_stat(stat):
         stat = "{:g}".format(round(stat.sum))
     elif torch.is_tensor(stat):
         stat = stat.tolist()
+    elif isinstance(stat, np.ndarray):  # Handle numpy arrays
+        stat = stat.tolist()
     return stat
-
 
 class BaseProgressBar(object):
     """Abstract class for progress bars."""
