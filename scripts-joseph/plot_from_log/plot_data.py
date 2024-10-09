@@ -56,7 +56,7 @@ def main(log_file_path, output_image_path):
         [["train_clip", "train_loss_scale"], ["train_train_wall", "train_gb_free"]]
     ]
 
-    variables = np.array(variables_wkd)
+    variables = np.array(variables_skd)
 
     # Create a figure with multiple subplots
     fig, axs = plt.subplots(variables.shape[0], variables.shape[1], figsize=(20, 25))

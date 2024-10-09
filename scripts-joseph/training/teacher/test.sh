@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --job-name=train
 #SBATCH --account=project_2007095
-#SBATCH --partition=gpusmall
+#SBATCH --partition=gputest
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=60G
-#SBATCH --time=36:00:00
+#SBATCH --mem=100G
+#SBATCH --time=00:15:00
 #SBATCH --gres=gpu:a100:1
 #SBATCH --output=/scratch/project_2007095/attieh/All_distillation_methods/logs/training/training_%j.log
 #SBATCH --error=/scratch/project_2007095/attieh/All_distillation_methods/logs/training/training_%j.log
@@ -60,7 +60,7 @@ set_model_params() {
     fi
 
     # Split the row into variables using IFS and comma delimiter
-    IFS=',' read -r model_name embed_dim ffn_embed_dim layers attention_heads normalize share_all_embeddings batch_size update_freq lr dropout clip_norm warmup_updates <<< "$row"
+    IFS=',' read -r model_name encoder_embed_dim encoder_ffn_embed_dim encoder_layers encoder_attention_heads encoder_normalize_before decoder_embed_dim decoder_ffn_embed_dim decoder_layers decoder_attention_heads decoder_normalize_before share_all_embeddings max_tokens update_freq lr dropout clip_norm warmup_updates <<< "$row"
 
 }
 
@@ -72,7 +72,7 @@ encoder_normalize_flag=""
 decoder_normalize_flag=""
 
     # Handle boolean flags for encoder and decoder normalization
-if [ "$normalize" == "TRUE" ]; then
+if [ "$encoder_normalize_before" == "TRUE" ]; then
         encoder_normalize_flag="--encoder-normalize-before"
         decoder_normalize_flag="--decoder-normalize-before"        
 fi
@@ -90,21 +90,21 @@ srun python3 -u $FAIRSEQ/train.py \
       --target-lang $2 \
       --fp16 \
       --task translation --arch transformer \
-      --encoder-embed-dim "$embed_dim" \
-      --encoder-ffn-embed-dim "$ffn_embed_dim" \
-      --encoder-layers "$layers" \
-      --encoder-attention-heads "$attention_heads" \
+      --encoder-embed-dim "$encoder_embed_dim" \
+      --encoder-ffn-embed-dim "$encoder_ffn_embed_dim" \
+      --encoder-layers "$encoder_layers" \
+      --encoder-attention-heads "$encoder_attention_heads" \
       $encoder_normalize_flag \
-      --decoder-embed-dim "$embed_dim" \
-      --decoder-ffn-embed-dim "$ffn_embed_dim" \
-      --decoder-layers "$layers" \
-      --decoder-attention-heads "$attention_heads" \
+      --decoder-embed-dim "$decoder_embed_dim" \
+      --decoder-ffn-embed-dim "$decoder_ffn_embed_dim" \
+      --decoder-layers "$decoder_layers" \
+      --decoder-attention-heads "$decoder_attention_heads" \
       $decoder_normalize_flag \
       $share_all_embeddings_flag \
       --save-dir "$MODEL_DIR/$tag" \
       --tensorboard-logdir "$MODEL_DIR/tensorboard_logs/$tag" \
       --ddp-backend=legacy_ddp --log-interval 100 --log-format json \
-      --max-tokens $batch_size \
+      --max-tokens 40000 \
       --update-freq "$update_freq" \
       --optimizer adam  --adam-betas '(0.9, 0.98)' \
       --lr "$lr"  --lr-scheduler inverse_sqrt \
